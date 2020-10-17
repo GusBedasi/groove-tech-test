@@ -18,6 +18,12 @@ export class CustomerService {
     return tokenResponse.data.token
   }
 
+  private async setToCache(id: string, payload: CustomerPayload): Promise<string> {
+    const redis = new Redis({ showFriendlyErrorStack: true })
+    const cache = await redis.set(id, JSON.stringify(payload))
+    return cache
+  }
+
   async createCustomer(customerPayload: CustomerPayload) {
     //Request Validation
     if(!customerPayload.customer_key){
@@ -48,11 +54,7 @@ export class CustomerService {
     customerPayload.signature = signatureResponse;
 
     //SET in redis cache
-    const redis = new Redis({ showFriendlyErrorStack: true })
-    const cache = await redis.set(customerPayload.id, JSON.stringify(customerPayload))
-    .then((response) => {
-      return response
-    })
+    const cache = await this.setToCache(customerPayload.id, customerPayload)
 
     if(cache != 'OK'){
       throw new HttpException('No cache available', HttpStatus.INTERNAL_SERVER_ERROR)
@@ -63,9 +65,9 @@ export class CustomerService {
   }
 
   async updateCustomer(id: string, customerPayload: CustomerPayload) {
-    const redis = new Redis({ showFriendlyErrorStack: true })
-    
     const token = await this.getToken()
+
+    await this.showCustomer(id)
 
     const signature = await ( await axios.post(`${process.env.GROOVE_API_URL}/sign`, {
       entity: {
@@ -83,7 +85,7 @@ export class CustomerService {
       signature
     }
     
-    await redis.set(customer.id, JSON.stringify(customer))
+    await this.setToCache(customer.id, customer)
 
     return customer;
 

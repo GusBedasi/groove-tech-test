@@ -1,18 +1,16 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { CustomerService } from './customer.service';
+import { CustomerPayload } from '../shared/customerPayload';
+import Redis from 'ioredis'
 
-describe('Customer.ServiceService', () => {
-  let service: CustomerService;
+describe('Should create a new User', () => {
+  it('It must return a customer', () => {
+    const customerService = new CustomerService(); 
 
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [CustomerService],
-    }).compile();
+    const customer = {
+      customer_key: 1114,
+      customer_name: 'John'
+    }
 
-    service = module.get<CustomerService>(CustomerService);
-  });
-
-  it('should be defined', () => {
-    expect(service).toBeDefined();
-  });
+    expect(customerService.createCustomer(customer as CustomerPayload)).toBeTruthy();
+  })
 });
